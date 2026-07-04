@@ -1,0 +1,1016 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Salus · by Spatas</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  :root{
+    --verde: #3D5A4A;
+    --verde-escuro: #2C4437;
+    --dourado: #B8952A;
+    --off-white: #F5F0E8;
+    --verde-claro: #E8EDE9;
+    --branco: #FFFFFF;
+    --alerta: #B85C38;
+    --texto: #2A2E2B;
+    --texto-suave: #6B7570;
+    --borda: #DDD4C4;
+    --sombra: 0 4px 18px rgba(61,90,74,0.08);
+    --raio: 10px;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--off-white);
+    color:var(--texto);
+    font-family:'Inter',sans-serif;
+    min-height:100vh;
+  }
+  h1,h2,h3,.serif{font-family:'Playfair Display',serif;}
+
+  /* ---------- TOPBAR ---------- */
+  .topbar{
+    position:sticky; top:0; z-index:50;
+    background:var(--verde);
+    color:var(--off-white);
+    display:flex; align-items:center; gap:14px;
+    padding:14px 20px;
+    box-shadow:var(--sombra);
+  }
+  .hamburger{
+    background:none; border:none; cursor:pointer;
+    width:38px; height:38px; display:flex; flex-direction:column;
+    justify-content:center; align-items:center; gap:5px;
+    padding:0; border-radius:8px;
+  }
+  .hamburger:hover{background:rgba(255,255,255,0.08);}
+  .hamburger span{display:block; width:22px; height:2px; background:var(--dourado); border-radius:2px;}
+  .brand{display:flex; align-items:center; gap:10px;}
+  .brand-icon{width:32px; height:32px; flex-shrink:0;}
+  .brand-text{display:flex; flex-direction:column; line-height:1;}
+  .brand-text .name{font-family:'Playfair Display',serif; font-size:22px; font-weight:600; color:var(--off-white);}
+  .brand-text .sub{font-size:9px; letter-spacing:2.5px; color:var(--dourado); margin-top:2px;}
+
+  /* ---------- SIDEBAR ---------- */
+  .overlay{
+    position:fixed; inset:0; background:rgba(20,30,24,0.35);
+    opacity:0; pointer-events:none; transition:opacity .25s ease; z-index:60;
+  }
+  .overlay.open{opacity:1; pointer-events:auto;}
+  .sidebar{
+    position:fixed; top:0; left:0; height:100%; width:280px;
+    background:var(--branco);
+    transform:translateX(-100%);
+    transition:transform .28s ease;
+    z-index:70;
+    box-shadow:4px 0 24px rgba(0,0,0,0.15);
+    display:flex; flex-direction:column;
+  }
+  .sidebar.open{transform:translateX(0);}
+  .sidebar-header{
+    padding:22px 20px; border-bottom:1px solid var(--borda);
+    display:flex; align-items:center; gap:10px;
+  }
+  .sidebar-header .name{font-family:'Playfair Display',serif; font-size:20px; color:var(--verde-escuro);}
+  .sidebar-header .sub{font-size:9px; letter-spacing:2.5px; color:var(--dourado);}
+  .sidebar nav{display:flex; flex-direction:column; padding:10px 0; flex:1; overflow-y:auto;}
+  .sidebar nav a{
+    padding:13px 22px; color:var(--texto); text-decoration:none;
+    font-size:14.5px; font-weight:500; border-left:3px solid transparent;
+    display:flex; align-items:center; gap:12px;
+    transition:background .15s, border-color .15s;
+  }
+  .sidebar nav a:hover{background:var(--verde-claro);}
+  .sidebar nav a.active{border-left-color:var(--dourado); background:var(--verde-claro); color:var(--verde-escuro); font-weight:600;}
+  .sidebar nav .section-label{
+    padding:16px 22px 6px; font-size:10.5px; letter-spacing:1.5px;
+    text-transform:uppercase; color:var(--texto-suave); font-weight:600;
+  }
+  .sidebar-footer{padding:16px 22px; font-size:11px; color:var(--texto-suave); border-top:1px solid var(--borda);}
+
+  /* ---------- LAYOUT ---------- */
+  #app{max-width:1000px; margin:0 auto; padding:28px 20px 60px;}
+  .page-title{margin:0 0 6px; font-size:28px; color:var(--verde-escuro);}
+  .page-subtitle{margin:0 0 26px; color:var(--texto-suave); font-size:14.5px;}
+
+  .card{
+    background:var(--branco); border-radius:var(--raio);
+    box-shadow:var(--sombra); padding:24px; margin-bottom:22px;
+    border:1px solid var(--borda);
+  }
+  .card h3{margin:0 0 18px; font-size:18px; color:var(--verde-escuro); font-weight:600;}
+
+  /* ---------- DASHBOARD ---------- */
+  .stats-grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:16px; margin-bottom:26px;}
+  .stat-card{
+    background:var(--branco); border-radius:var(--raio); padding:20px;
+    box-shadow:var(--sombra); border-top:3px solid var(--dourado);
+  }
+  .stat-card .num{font-family:'Playfair Display',serif; font-size:34px; color:var(--verde-escuro); line-height:1;}
+  .stat-card .label{font-size:12.5px; color:var(--texto-suave); margin-top:6px;}
+  .quick-actions{display:flex; flex-wrap:wrap; gap:12px; margin-bottom:28px;}
+
+  /* ---------- FORMS ---------- */
+  .form-grid{display:grid; grid-template-columns:1fr 1fr; gap:16px;}
+  .form-grid.single{grid-template-columns:1fr;}
+  .form-group{display:flex; flex-direction:column; gap:6px; margin-bottom:14px;}
+  .form-group.full{grid-column:1 / -1;}
+  label{font-size:13px; font-weight:600; color:var(--verde-escuro);}
+  input, select, textarea{
+    font-family:'Inter',sans-serif; font-size:14.5px;
+    padding:10px 12px; border:1px solid var(--borda); border-radius:8px;
+    background:var(--off-white); color:var(--texto); width:100%;
+  }
+  input:focus, select:focus, textarea:focus{
+    outline:none; border-color:var(--dourado); box-shadow:0 0 0 3px rgba(184,149,42,0.18);
+    background:var(--branco);
+  }
+  textarea{resize:vertical; min-height:70px;}
+  .hint{font-size:12px; color:var(--texto-suave);}
+
+  /* ---------- BUTTONS ---------- */
+  .btn{
+    display:inline-flex; align-items:center; gap:8px;
+    font-family:'Inter',sans-serif; font-size:14px; font-weight:600;
+    padding:11px 20px; border-radius:8px; border:none; cursor:pointer;
+    text-decoration:none; transition:filter .15s, transform .1s;
+  }
+  .btn:active{transform:scale(0.98);}
+  .btn-primary{background:var(--verde); color:var(--off-white);}
+  .btn-primary:hover{filter:brightness(1.1);}
+  .btn-gold{background:var(--dourado); color:var(--branco);}
+  .btn-gold:hover{filter:brightness(1.08);}
+  .btn-outline{background:transparent; color:var(--verde); border:1.5px solid var(--verde);}
+  .btn-outline:hover{background:var(--verde-claro);}
+  .btn-danger{background:transparent; color:var(--alerta); border:1.5px solid var(--alerta);}
+  .btn-danger:hover{background:rgba(184,92,56,0.08);}
+  .btn-sm{padding:7px 12px; font-size:12.5px;}
+  .form-actions{display:flex; gap:12px; margin-top:6px; flex-wrap:wrap;}
+
+  /* ---------- TABLES ---------- */
+  table{width:100%; border-collapse:collapse; font-size:13.8px;}
+  th{
+    text-align:left; padding:10px 12px; background:var(--verde-claro);
+    color:var(--verde-escuro); font-size:11.5px; letter-spacing:0.5px;
+    text-transform:uppercase; font-weight:600;
+  }
+  td{padding:11px 12px; border-bottom:1px solid var(--borda); vertical-align:top;}
+  tr.clickable{cursor:pointer;}
+  tr.clickable:hover td{background:var(--verde-claro);}
+  .table-wrap{overflow-x:auto;}
+  .empty-state{padding:40px 20px; text-align:center; color:var(--texto-suave);}
+  .empty-state .em-icon{font-size:32px; margin-bottom:10px;}
+
+  /* ---------- BADGES ---------- */
+  .badge{display:inline-block; padding:4px 10px; border-radius:20px; font-size:11.5px; font-weight:600;}
+  .badge-agendado{background:#EFE3C0; color:#8A6D14;}
+  .badge-em_andamento{background:#D9E7F0; color:#2E6A8C;}
+  .badge-concluido{background:#DCEBDF; color:#2C6B41;}
+  .badge-cancelado{background:#F2DCD4; color:var(--alerta);}
+
+  /* ---------- FILTERS ---------- */
+  .filters-row{display:flex; gap:12px; flex-wrap:wrap; margin-bottom:18px;}
+  .filters-row input, .filters-row select{width:auto; min-width:160px;}
+
+  /* ---------- TOAST ---------- */
+  #toast{
+    position:fixed; bottom:24px; left:50%; transform:translateX(-50%) translateY(100px);
+    background:var(--verde-escuro); color:var(--off-white); padding:13px 22px;
+    border-radius:8px; font-size:14px; box-shadow:0 6px 20px rgba(0,0,0,0.2);
+    z-index:200; transition:transform .3s ease; max-width:90vw;
+  }
+  #toast.show{transform:translateX(-50%) translateY(0);}
+  #toast.error{background:var(--alerta);}
+
+  @media(max-width:640px){
+    .form-grid{grid-template-columns:1fr;}
+    .stats-grid{grid-template-columns:repeat(2,1fr);}
+  }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <button class="hamburger" id="hamburgerBtn" aria-label="Abrir menu">
+    <span></span><span></span><span></span>
+  </button>
+  <div class="brand">
+    <svg class="brand-icon" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M74,26 A36,36 0 1 0 74,74" stroke="#2C4437" stroke-width="3" stroke-linecap="round"/>
+      <path d="M17,64 Q27,59 34,68" stroke="#8FA593" stroke-width="2.6" stroke-linecap="round"/>
+      <path d="M21,61 Q25,54 32,56" stroke="#8FA593" stroke-width="2.6" stroke-linecap="round"/>
+      <path d="M40,50 C35,40 38,27 49,24 C58,22 67,27 70,36 C72,41 70,45 66,45 L58,42 C54,44 52,48 53,53" stroke="#B8952A" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M44,33 C40,37 39,43 43,47" stroke="#B8952A" stroke-width="2.6" stroke-linecap="round"/>
+      <path d="M45,58 L41,48 L50,52 L59,46 L57,55 C61,58 62,64 58,69 C52,73 44,71 42,65 C41,61 42,59 45,58 Z" stroke="#B8952A" stroke-width="2.6" stroke-linejoin="round" stroke-linecap="round"/>
+    </svg>
+    <div class="brand-text">
+      <span class="name">Salus</span>
+      <span class="sub">BY SPATAS</span>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="overlay"></div>
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-header">
+    <div class="brand-text">
+      <span class="name">Salus</span>
+      <span class="sub">MENU</span>
+    </div>
+  </div>
+  <nav id="sidebarNav">
+    <a href="#/" data-route="/">🏠 Início</a>
+    <a href="#/atendimento/novo" data-route="/atendimento/novo">📋 Novo Atendimento</a>
+    <a href="#/historico" data-route="/historico">🕘 Histórico</a>
+    <div class="section-label">Cadastros</div>
+    <a href="#/clientes" data-route="/clientes">👤 Clientes</a>
+    <a href="#/pacientes" data-route="/pacientes">🐾 Pacientes</a>
+    <a href="#/procedimentos" data-route="/procedimentos">🧴 Procedimentos</a>
+  </nav>
+  <div class="sidebar-footer">Salus v1 · by Spatas · uso interno</div>
+</aside>
+
+<div id="app"></div>
+<div id="toast"></div>
+
+<script>
+/* =========================================================
+   CONFIG SUPABASE
+========================================================= */
+const SUPABASE_URL = 'https://bhydgbvthgpggknzymmy.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJoeWRnYnZ0aGdwZ2drbnp5bW15Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODMxNTMxOTUsImV4cCI6MjA5ODcyOTE5NX0.TZalYTuNpKuXPHJF7FxL5DNDGM8N5nhDdgZ6uZD47Hw';
+
+if(typeof supabase === 'undefined'){
+  document.getElementById('app').innerHTML = `<div class="empty-state"><div class="em-icon">⚠️</div>
+    Não foi possível carregar a biblioteca do Supabase.<br>
+    Verifique sua conexão com a internet e recarregue a página.</div>`;
+  throw new Error('SDK do Supabase não carregado — verifique a tag <script> do CDN no <head>.');
+}
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+/* =========================================================
+   ESTADO GLOBAL (cache local dos dados)
+========================================================= */
+const state = { clientes: [], pacientes: [], procedimentos: [], atendimentos: [] };
+
+/* =========================================================
+   HELPERS
+========================================================= */
+function toast(msg, isError=false){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = isError ? 'error show' : 'show';
+  setTimeout(()=> t.classList.remove('show'), 3200);
+}
+function fmtDate(d){
+  if(!d) return '—';
+  const dt = new Date(d);
+  return dt.toLocaleString('pt-BR', {day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit'});
+}
+function fmtDateOnly(d){
+  if(!d) return '—';
+  const dt = new Date(d + 'T00:00:00');
+  return dt.toLocaleDateString('pt-BR');
+}
+function fmtMoney(v){
+  if(v === null || v === undefined || v === '') return '—';
+  return Number(v).toLocaleString('pt-BR', {style:'currency', currency:'BRL'});
+}
+function toInputDatetime(v){
+  if(!v) return '';
+  const dt = new Date(v);
+  const pad = n => String(n).padStart(2,'0');
+  return `${dt.getFullYear()}-${pad(dt.getMonth()+1)}-${pad(dt.getDate())}T${pad(dt.getHours())}:${pad(dt.getMinutes())}`;
+}
+function statusLabel(s){
+  return {agendado:'Agendado', em_andamento:'Em andamento', concluido:'Concluído', cancelado:'Cancelado'}[s] || s;
+}
+function esc(s){
+  if(s === null || s === undefined) return '';
+  return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+/* =========================================================
+   CARREGAMENTO DE DADOS
+========================================================= */
+async function loadAll(){
+  const [c, p, pr, at] = await Promise.all([
+    sb.from('dim_cliente').select('*').order('nome'),
+    sb.from('dim_paciente').select('*').order('nome'),
+    sb.from('dim_procedimento').select('*').order('nome'),
+    sb.from('vw_atendimento_completo').select('*').order('data_hora_agendada', {ascending:false})
+  ]);
+  if(c.error) toast('Erro ao carregar clientes: '+c.error.message, true); else state.clientes = c.data;
+  if(p.error) toast('Erro ao carregar pacientes: '+p.error.message, true); else state.pacientes = p.data;
+  if(pr.error) toast('Erro ao carregar procedimentos: '+pr.error.message, true); else state.procedimentos = pr.data;
+  if(at.error) toast('Erro ao carregar atendimentos: '+at.error.message, true); else state.atendimentos = at.data;
+}
+
+/* =========================================================
+   ROTEADOR
+========================================================= */
+const app = document.getElementById('app');
+
+function router(){
+  const hash = location.hash.replace('#','') || '/';
+  const parts = hash.split('/').filter(Boolean);
+
+  document.querySelectorAll('.sidebar nav a').forEach(a=>{
+    a.classList.toggle('active', a.getAttribute('href') === '#'+hash);
+  });
+  closeSidebar();
+
+  if(parts.length === 0) return renderHome();
+  if(parts[0] === 'clientes') return renderClientes();
+  if(parts[0] === 'pacientes') return renderPacientes();
+  if(parts[0] === 'procedimentos') return renderProcedimentos();
+  if(parts[0] === 'historico') return renderHistorico();
+  if(parts[0] === 'atendimento' && parts[1] === 'novo') return renderAtendimentoForm(null);
+  if(parts[0] === 'atendimento' && parts[1]) return renderAtendimentoForm(parts[1]);
+  app.innerHTML = `<div class="empty-state"><div class="em-icon">🔍</div>Página não encontrada.</div>`;
+}
+window.addEventListener('hashchange', router);
+
+/* =========================================================
+   SIDEBAR
+========================================================= */
+const sidebar = document.getElementById('sidebar');
+const overlay = document.getElementById('overlay');
+function openSidebar(){ sidebar.classList.add('open'); overlay.classList.add('open'); }
+function closeSidebar(){ sidebar.classList.remove('open'); overlay.classList.remove('open'); }
+document.getElementById('hamburgerBtn').addEventListener('click', ()=>{
+  sidebar.classList.contains('open') ? closeSidebar() : openSidebar();
+});
+overlay.addEventListener('click', closeSidebar);
+
+/* =========================================================
+   VIEW: HOME / DASHBOARD
+========================================================= */
+function renderHome(){
+  const hoje = new Date(); hoje.setHours(0,0,0,0);
+  const agendadosFuturos = state.atendimentos.filter(a => a.status === 'agendado' && a.data_hora_agendada && new Date(a.data_hora_agendada) >= hoje);
+  const proximos = [...agendadosFuturos].sort((a,b)=> new Date(a.data_hora_agendada) - new Date(b.data_hora_agendada)).slice(0,5);
+
+  app.innerHTML = `
+    <h1 class="page-title serif">Olá, Dra. Jennifer</h1>
+    <p class="page-subtitle">Tudo em um só lugar, cuidado em cada detalhe. Aqui está o resumo do consultório hoje.</p>
+
+    <div class="stats-grid">
+      <div class="stat-card"><div class="num">${state.clientes.length}</div><div class="label">Clientes cadastrados</div></div>
+      <div class="stat-card"><div class="num">${state.pacientes.length}</div><div class="label">Pacientes cadastrados</div></div>
+      <div class="stat-card"><div class="num">${state.procedimentos.length}</div><div class="label">Procedimentos ativos</div></div>
+      <div class="stat-card"><div class="num">${agendadosFuturos.length}</div><div class="label">Atendimentos agendados</div></div>
+    </div>
+
+    <div class="quick-actions">
+      <a class="btn btn-primary" href="#/atendimento/novo">+ Novo Atendimento</a>
+      <a class="btn btn-outline" href="#/clientes">+ Cliente</a>
+      <a class="btn btn-outline" href="#/pacientes">+ Paciente</a>
+      <a class="btn btn-outline" href="#/procedimentos">+ Procedimento</a>
+    </div>
+
+    <div class="card">
+      <h3>Próximos agendamentos</h3>
+      ${proximos.length === 0 ? `<div class="empty-state"><div class="em-icon">📅</div>Nenhum atendimento agendado no momento.</div>` : `
+      <div class="table-wrap"><table>
+        <thead><tr><th>Data</th><th>Paciente</th><th>Cliente</th><th>Procedimento</th><th>Status</th></tr></thead>
+        <tbody>
+          ${proximos.map(a => `
+            <tr class="clickable" onclick="location.hash='#/atendimento/${a.id}'">
+              <td>${fmtDate(a.data_hora_agendada)}</td>
+              <td>${esc(a.paciente_nome)}</td>
+              <td>${esc(a.cliente_nome)}</td>
+              <td>${esc(a.procedimento_nome)}</td>
+              <td><span class="badge badge-${a.status}">${statusLabel(a.status)}</span></td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table></div>`}
+    </div>
+  `;
+}
+
+/* =========================================================
+   VIEW: CLIENTES
+========================================================= */
+let clienteEditId = null;
+
+function renderClientes(){
+  clienteEditId = null;
+  app.innerHTML = `
+    <h1 class="page-title serif">Clientes</h1>
+    <p class="page-subtitle">Cadastro dos tutores dos pacientes.</p>
+
+    <div class="card">
+      <h3 id="clienteFormTitle">Novo cliente</h3>
+      <form id="clienteForm">
+        <div class="form-grid">
+          <div class="form-group full"><label>Nome completo *</label><input type="text" id="cl_nome" required></div>
+          <div class="form-group"><label>Telefone</label><input type="text" id="cl_telefone" placeholder="(31) 90000-0000"></div>
+          <div class="form-group"><label>E-mail</label><input type="email" id="cl_email"></div>
+          <div class="form-group"><label>CPF</label><input type="text" id="cl_cpf"></div>
+          <div class="form-group"><label>Endereço</label><input type="text" id="cl_endereco"></div>
+          <div class="form-group full"><label>Observações</label><textarea id="cl_obs"></textarea></div>
+        </div>
+        <div class="form-actions">
+          <button type="submit" class="btn btn-primary">Salvar cliente</button>
+          <button type="button" class="btn btn-outline" id="clienteCancelBtn" style="display:none;">Cancelar edição</button>
+        </div>
+      </form>
+    </div>
+
+    <div class="card">
+      <h3>Clientes cadastrados (${state.clientes.length})</h3>
+      <div class="filters-row"><input type="text" id="clienteSearch" placeholder="Buscar por nome..."></div>
+      <div class="table-wrap" id="clienteTableWrap"></div>
+    </div>
+  `;
+
+  renderClienteTable(state.clientes);
+  document.getElementById('clienteSearch').addEventListener('input', e=>{
+    const q = e.target.value.toLowerCase();
+    renderClienteTable(state.clientes.filter(c => c.nome.toLowerCase().includes(q)));
+  });
+  document.getElementById('clienteForm').addEventListener('submit', submitCliente);
+  document.getElementById('clienteCancelBtn').addEventListener('click', resetClienteForm);
+}
+
+function renderClienteTable(list){
+  const wrap = document.getElementById('clienteTableWrap');
+  if(list.length === 0){ wrap.innerHTML = `<div class="empty-state"><div class="em-icon">👤</div>Nenhum cliente encontrado.</div>`; return; }
+  wrap.innerHTML = `
+    <table>
+      <thead><tr><th>Nome</th><th>Telefone</th><th>E-mail</th><th></th></tr></thead>
+      <tbody>
+        ${list.map(c => `
+          <tr>
+            <td>${esc(c.nome)}</td>
+            <td>${esc(c.telefone) || '—'}</td>
+            <td>${esc(c.email) || '—'}</td>
+            <td>
+              <button class="btn btn-sm btn-outline" onclick="editCliente('${c.id}')">Editar</button>
+              <button class="btn btn-sm btn-danger" onclick="deleteCliente('${c.id}')">Excluir</button>
+            </td>
+          </tr>
+        `).join('')}
+      </tbody>
+    </table>
+  `;
+}
+
+function editCliente(id){
+  const c = state.clientes.find(x=>x.id===id);
+  if(!c) return;
+  clienteEditId = id;
+  document.getElementById('clienteFormTitle').textContent = 'Editando: ' + c.nome;
+  document.getElementById('cl_nome').value = c.nome || '';
+  document.getElementById('cl_telefone').value = c.telefone || '';
+  document.getElementById('cl_email').value = c.email || '';
+  document.getElementById('cl_cpf').value = c.cpf || '';
+  document.getElementById('cl_endereco').value = c.endereco || '';
+  document.getElementById('cl_obs').value = c.observacoes || '';
+  document.getElementById('clienteCancelBtn').style.display = 'inline-flex';
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+function resetClienteForm(){
+  clienteEditId = null;
+  document.getElementById('clienteForm').reset();
+  document.getElementById('clienteFormTitle').textContent = 'Novo cliente';
+  document.getElementById('clienteCancelBtn').style.display = 'none';
+}
+async function submitCliente(e){
+  e.preventDefault();
+  const payload = {
+    nome: document.getElementById('cl_nome').value.trim(),
+    telefone: document.getElementById('cl_telefone').value.trim() || null,
+    email: document.getElementById('cl_email').value.trim() || null,
+    cpf: document.getElementById('cl_cpf').value.trim() || null,
+    endereco: document.getElementById('cl_endereco').value.trim() || null,
+    observacoes: document.getElementById('cl_obs').value.trim() || null,
+  };
+  let error;
+  if(clienteEditId){
+    ({error} = await sb.from('dim_cliente').update(payload).eq('id', clienteEditId));
+  } else {
+    ({error} = await sb.from('dim_cliente').insert([payload]));
+  }
+  if(error) return toast('Erro ao salvar cliente: ' + error.message, true);
+  toast('Cliente salvo com sucesso!');
+  await loadAll();
+  renderClientes();
+}
+async function deleteCliente(id){
+  if(!confirm('Excluir este cliente? Essa ação não pode ser desfeita.')) return;
+  const {error} = await sb.from('dim_cliente').delete().eq('id', id);
+  if(error) return toast('Não é possível excluir: verifique se há pacientes vinculados. (' + error.message + ')', true);
+  toast('Cliente excluído.');
+  await loadAll();
+  renderClientes();
+}
+
+/* =========================================================
+   VIEW: PACIENTES
+========================================================= */
+let pacienteEditId = null;
+
+function renderPacientes(){
+  pacienteEditId = null;
+  app.innerHTML = `
+    <h1 class="page-title serif">Pacientes</h1>
+    <p class="page-subtitle">Cadastro dos pets, sempre vinculados a um cliente.</p>
+
+    <div class="card">
+      <h3 id="pacienteFormTitle">Novo paciente</h3>
+      <form id="pacienteForm">
+        <div class="form-grid">
+          <div class="form-group full">
+            <label>Cliente (tutor) *</label>
+            <select id="pa_cliente_id" required>
+              <option value="">Selecione o cliente...</option>
+              ${state.clientes.map(c => `<option value="${c.id}">${esc(c.nome)}</option>`).join('')}
+            </select>
+            ${state.clientes.length === 0 ? '<span class="hint">Nenhum cliente cadastrado ainda — <a href="#/clientes">cadastre um cliente primeiro</a>.</span>' : ''}
+          </div>
+          <div class="form-group"><label>Nome do pet *</label><input type="text" id="pa_nome" required></div>
+          <div class="form-group"><label>Espécie</label>
+            <select id="pa_especie"><option value="">Selecione...</option><option>Cão</option><option>Gato</option><option>Outro</option></select>
+          </div>
+          <div class="form-group"><label>Raça</label><input type="text" id="pa_raca"></div>
+          <div class="form-group"><label>Sexo</label>
+            <select id="pa_sexo"><option value="">Selecione...</option><option value="M">Macho</option><option value="F">Fêmea</option></select>
+          </div>
+          <div class="form-group"><label>Data de nascimento</label><input type="date" id="pa_nascimento"></div>
+          <div class="form-group"><label>Peso atual (kg)</label><input type="number" step="0.01" id="pa_peso"></div>
+          <div class="form-group full"><label>URL da foto</label><input type="text" id="pa_foto" placeholder="https://..."></div>
+          <div class="form-group full"><label>Alergias</label><textarea id="pa_alergias"></textarea></div>
+          <div class="form-group full"><label>Observações fixas (condições crônicas, cuidados permanentes)</label><textarea id="pa_obs"></textarea></div>
+        </div>
+        <div class="form-actions">
+          <button type="submit" class="btn btn-primary">Salvar paciente</button>
+          <button type="button" class="btn btn-outline" id="pacienteCancelBtn" style="display:none;">Cancelar edição</button>
+        </div>
+      </form>
+    </div>
+
+    <div class="card">
+      <h3>Pacientes cadastrados (${state.pacientes.length})</h3>
+      <div class="filters-row"><input type="text" id="pacienteSearch" placeholder="Buscar por nome do pet..."></div>
+      <div class="table-wrap" id="pacienteTableWrap"></div>
+    </div>
+  `;
+
+  renderPacienteTable(state.pacientes);
+  document.getElementById('pacienteSearch').addEventListener('input', e=>{
+    const q = e.target.value.toLowerCase();
+    renderPacienteTable(state.pacientes.filter(p => p.nome.toLowerCase().includes(q)));
+  });
+  document.getElementById('pacienteForm').addEventListener('submit', submitPaciente);
+  document.getElementById('pacienteCancelBtn').addEventListener('click', resetPacienteForm);
+}
+
+function clienteNome(id){
+  const c = state.clientes.find(x=>x.id===id);
+  return c ? c.nome : '—';
+}
+
+function renderPacienteTable(list){
+  const wrap = document.getElementById('pacienteTableWrap');
+  if(list.length === 0){ wrap.innerHTML = `<div class="empty-state"><div class="em-icon">🐾</div>Nenhum paciente encontrado.</div>`; return; }
+  wrap.innerHTML = `
+    <table>
+      <thead><tr><th>Pet</th><th>Espécie</th><th>Cliente</th><th>Peso atual</th><th></th></tr></thead>
+      <tbody>
+        ${list.map(p => `
+          <tr>
+            <td>${esc(p.nome)}</td>
+            <td>${esc(p.especie) || '—'}</td>
+            <td>${esc(clienteNome(p.cliente_id))}</td>
+            <td>${p.peso_atual_kg ? p.peso_atual_kg + ' kg' : '—'}</td>
+            <td>
+              <button class="btn btn-sm btn-outline" onclick="editPaciente('${p.id}')">Editar</button>
+              <button class="btn btn-sm btn-danger" onclick="deletePaciente('${p.id}')">Excluir</button>
+            </td>
+          </tr>
+        `).join('')}
+      </tbody>
+    </table>
+  `;
+}
+
+function editPaciente(id){
+  const p = state.pacientes.find(x=>x.id===id);
+  if(!p) return;
+  pacienteEditId = id;
+  document.getElementById('pacienteFormTitle').textContent = 'Editando: ' + p.nome;
+  document.getElementById('pa_cliente_id').value = p.cliente_id || '';
+  document.getElementById('pa_nome').value = p.nome || '';
+  document.getElementById('pa_especie').value = p.especie || '';
+  document.getElementById('pa_raca').value = p.raca || '';
+  document.getElementById('pa_sexo').value = p.sexo || '';
+  document.getElementById('pa_nascimento').value = p.data_nascimento || '';
+  document.getElementById('pa_peso').value = p.peso_atual_kg || '';
+  document.getElementById('pa_foto').value = p.foto_url || '';
+  document.getElementById('pa_alergias').value = p.alergias || '';
+  document.getElementById('pa_obs').value = p.observacoes_fixas || '';
+  document.getElementById('pacienteCancelBtn').style.display = 'inline-flex';
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+function resetPacienteForm(){
+  pacienteEditId = null;
+  document.getElementById('pacienteForm').reset();
+  document.getElementById('pacienteFormTitle').textContent = 'Novo paciente';
+  document.getElementById('pacienteCancelBtn').style.display = 'none';
+}
+async function submitPaciente(e){
+  e.preventDefault();
+  const payload = {
+    cliente_id: document.getElementById('pa_cliente_id').value,
+    nome: document.getElementById('pa_nome').value.trim(),
+    especie: document.getElementById('pa_especie').value || null,
+    raca: document.getElementById('pa_raca').value.trim() || null,
+    sexo: document.getElementById('pa_sexo').value || null,
+    data_nascimento: document.getElementById('pa_nascimento').value || null,
+    peso_atual_kg: document.getElementById('pa_peso').value || null,
+    foto_url: document.getElementById('pa_foto').value.trim() || null,
+    alergias: document.getElementById('pa_alergias').value.trim() || null,
+    observacoes_fixas: document.getElementById('pa_obs').value.trim() || null,
+  };
+  if(!payload.cliente_id) return toast('Selecione o cliente (tutor) do paciente.', true);
+  let error;
+  if(pacienteEditId){
+    ({error} = await sb.from('dim_paciente').update(payload).eq('id', pacienteEditId));
+  } else {
+    ({error} = await sb.from('dim_paciente').insert([payload]));
+  }
+  if(error) return toast('Erro ao salvar paciente: ' + error.message, true);
+  toast('Paciente salvo com sucesso!');
+  await loadAll();
+  renderPacientes();
+}
+async function deletePaciente(id){
+  if(!confirm('Excluir este paciente? Essa ação não pode ser desfeita.')) return;
+  const {error} = await sb.from('dim_paciente').delete().eq('id', id);
+  if(error) return toast('Não é possível excluir: verifique se há atendimentos vinculados. (' + error.message + ')', true);
+  toast('Paciente excluído.');
+  await loadAll();
+  renderPacientes();
+}
+
+/* =========================================================
+   VIEW: PROCEDIMENTOS
+========================================================= */
+let procedimentoEditId = null;
+
+function renderProcedimentos(){
+  procedimentoEditId = null;
+  app.innerHTML = `
+    <h1 class="page-title serif">Procedimentos</h1>
+    <p class="page-subtitle">Catálogo de serviços clínicos e estéticos oferecidos.</p>
+
+    <div class="card">
+      <h3 id="procFormTitle">Novo procedimento</h3>
+      <form id="procForm">
+        <div class="form-grid">
+          <div class="form-group full"><label>Nome do procedimento *</label><input type="text" id="pr_nome" required></div>
+          <div class="form-group"><label>Categoria</label>
+            <select id="pr_categoria">
+              <option value="">Selecione...</option>
+              <option>Odontológico</option><option>Dermatológico</option>
+              <option>Trichológico</option><option>Clínico</option><option>Estético</option>
+            </select>
+          </div>
+          <div class="form-group"><label>Duração estimada (min)</label><input type="number" id="pr_duracao"></div>
+          <div class="form-group"><label>Preço (R$)</label><input type="number" step="0.01" id="pr_preco"></div>
+          <div class="form-group"><label>Ativo</label>
+            <select id="pr_ativo"><option value="true">Sim</option><option value="false">Não</option></select>
+          </div>
+          <div class="form-group full"><label>Descrição</label><textarea id="pr_desc"></textarea></div>
+        </div>
+        <div class="form-actions">
+          <button type="submit" class="btn btn-primary">Salvar procedimento</button>
+          <button type="button" class="btn btn-outline" id="procCancelBtn" style="display:none;">Cancelar edição</button>
+        </div>
+      </form>
+    </div>
+
+    <div class="card">
+      <h3>Procedimentos cadastrados (${state.procedimentos.length})</h3>
+      <div class="table-wrap" id="procTableWrap"></div>
+    </div>
+  `;
+
+  renderProcTable(state.procedimentos);
+  document.getElementById('procForm').addEventListener('submit', submitProcedimento);
+  document.getElementById('procCancelBtn').addEventListener('click', resetProcForm);
+}
+
+function renderProcTable(list){
+  const wrap = document.getElementById('procTableWrap');
+  if(list.length === 0){ wrap.innerHTML = `<div class="empty-state"><div class="em-icon">🧴</div>Nenhum procedimento cadastrado.</div>`; return; }
+  wrap.innerHTML = `
+    <table>
+      <thead><tr><th>Nome</th><th>Categoria</th><th>Duração</th><th>Preço</th><th>Ativo</th><th></th></tr></thead>
+      <tbody>
+        ${list.map(p => `
+          <tr>
+            <td>${esc(p.nome)}</td>
+            <td>${esc(p.categoria) || '—'}</td>
+            <td>${p.duracao_estimada_min ? p.duracao_estimada_min + ' min' : '—'}</td>
+            <td>${fmtMoney(p.preco)}</td>
+            <td>${p.ativo ? 'Sim' : 'Não'}</td>
+            <td>
+              <button class="btn btn-sm btn-outline" onclick="editProcedimento('${p.id}')">Editar</button>
+              <button class="btn btn-sm btn-danger" onclick="deleteProcedimento('${p.id}')">Excluir</button>
+            </td>
+          </tr>
+        `).join('')}
+      </tbody>
+    </table>
+  `;
+}
+
+function editProcedimento(id){
+  const p = state.procedimentos.find(x=>x.id===id);
+  if(!p) return;
+  procedimentoEditId = id;
+  document.getElementById('procFormTitle').textContent = 'Editando: ' + p.nome;
+  document.getElementById('pr_nome').value = p.nome || '';
+  document.getElementById('pr_categoria').value = p.categoria || '';
+  document.getElementById('pr_duracao').value = p.duracao_estimada_min || '';
+  document.getElementById('pr_preco').value = p.preco || '';
+  document.getElementById('pr_ativo').value = String(p.ativo);
+  document.getElementById('pr_desc').value = p.descricao || '';
+  document.getElementById('procCancelBtn').style.display = 'inline-flex';
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+function resetProcForm(){
+  procedimentoEditId = null;
+  document.getElementById('procForm').reset();
+  document.getElementById('procFormTitle').textContent = 'Novo procedimento';
+  document.getElementById('procCancelBtn').style.display = 'none';
+}
+async function submitProcedimento(e){
+  e.preventDefault();
+  const payload = {
+    nome: document.getElementById('pr_nome').value.trim(),
+    categoria: document.getElementById('pr_categoria').value || null,
+    duracao_estimada_min: document.getElementById('pr_duracao').value || null,
+    preco: document.getElementById('pr_preco').value || null,
+    ativo: document.getElementById('pr_ativo').value === 'true',
+    descricao: document.getElementById('pr_desc').value.trim() || null,
+  };
+  let error;
+  if(procedimentoEditId){
+    ({error} = await sb.from('dim_procedimento').update(payload).eq('id', procedimentoEditId));
+  } else {
+    ({error} = await sb.from('dim_procedimento').insert([payload]));
+  }
+  if(error) return toast('Erro ao salvar procedimento: ' + error.message, true);
+  toast('Procedimento salvo com sucesso!');
+  await loadAll();
+  renderProcedimentos();
+}
+async function deleteProcedimento(id){
+  if(!confirm('Excluir este procedimento? Essa ação não pode ser desfeita.')) return;
+  const {error} = await sb.from('dim_procedimento').delete().eq('id', id);
+  if(error) return toast('Não é possível excluir: verifique se há atendimentos vinculados. (' + error.message + ')', true);
+  toast('Procedimento excluído.');
+  await loadAll();
+  renderProcedimentos();
+}
+
+/* =========================================================
+   VIEW: NOVO ATENDIMENTO / EDITAR ATENDIMENTO
+========================================================= */
+async function renderAtendimentoForm(id){
+  let atendimento = null;
+  if(id){
+    const {data, error} = await sb.from('fato_atendimento').select('*').eq('id', id).single();
+    if(error){ toast('Atendimento não encontrado.', true); return renderHistorico(); }
+    atendimento = data;
+  }
+
+  const pacientesDoCliente = atendimento
+    ? state.pacientes.filter(p => p.cliente_id === atendimento.cliente_id)
+    : [];
+
+  app.innerHTML = `
+    <h1 class="page-title serif">${id ? 'Editar atendimento' : 'Novo atendimento'}</h1>
+    <p class="page-subtitle">${id ? 'Atualize os dados do prontuário.' : 'Selecione o cliente, o paciente e o procedimento para começar.'}</p>
+
+    <form id="atendimentoForm">
+      <div class="card">
+        <h3>Identificação</h3>
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Cliente *</label>
+            <select id="at_cliente_id" required>
+              <option value="">Selecione o cliente...</option>
+              ${state.clientes.map(c => `<option value="${c.id}" ${atendimento && atendimento.cliente_id===c.id ? 'selected':''}>${esc(c.nome)}</option>`).join('')}
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Paciente *</label>
+            <select id="at_paciente_id" required>
+              <option value="">${atendimento ? 'Selecione o paciente...' : 'Selecione o cliente primeiro'}</option>
+              ${pacientesDoCliente.map(p => `<option value="${p.id}" ${atendimento && atendimento.paciente_id===p.id ? 'selected':''}>${esc(p.nome)}</option>`).join('')}
+            </select>
+          </div>
+          <div class="form-group full">
+            <label>Procedimento *</label>
+            <select id="at_procedimento_id" required>
+              <option value="">Selecione o procedimento...</option>
+              ${state.procedimentos.map(p => `<option value="${p.id}" ${atendimento && atendimento.procedimento_id===p.id ? 'selected':''}>${esc(p.nome)}${p.categoria ? ' — '+esc(p.categoria) : ''}</option>`).join('')}
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>Agenda e status</h3>
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Status</label>
+            <select id="at_status">
+              <option value="agendado" ${(!atendimento || atendimento.status==='agendado')?'selected':''}>Agendado</option>
+              <option value="em_andamento" ${atendimento && atendimento.status==='em_andamento' ? 'selected':''}>Em andamento</option>
+              <option value="concluido" ${atendimento && atendimento.status==='concluido' ? 'selected':''}>Concluído</option>
+              <option value="cancelado" ${atendimento && atendimento.status==='cancelado' ? 'selected':''}>Cancelado</option>
+            </select>
+          </div>
+          <div class="form-group"><label>Data/hora agendada</label>
+            <input type="datetime-local" id="at_data_agendada" value="${atendimento ? toInputDatetime(atendimento.data_hora_agendada) : ''}">
+          </div>
+          <div class="form-group"><label>Início real</label>
+            <input type="datetime-local" id="at_data_inicio" value="${atendimento ? toInputDatetime(atendimento.data_hora_inicio) : ''}">
+          </div>
+          <div class="form-group"><label>Término real</label>
+            <input type="datetime-local" id="at_data_fim" value="${atendimento ? toInputDatetime(atendimento.data_hora_fim) : ''}">
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>Prontuário</h3>
+        <div class="form-grid">
+          <div class="form-group full"><label>Queixa principal</label><textarea id="at_queixa">${esc(atendimento?.queixa_principal)}</textarea></div>
+          <div class="form-group full"><label>Exame clínico</label><textarea id="at_exame">${esc(atendimento?.exame_clinico)}</textarea></div>
+          <div class="form-group full"><label>Diagnóstico</label><textarea id="at_diagnostico">${esc(atendimento?.diagnostico)}</textarea></div>
+          <div class="form-group full"><label>Conduta</label><textarea id="at_conduta">${esc(atendimento?.conduta)}</textarea></div>
+          <div class="form-group full"><label>Observações livres</label><textarea id="at_obs_livres">${esc(atendimento?.observacoes_livres)}</textarea></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>Peso e valores</h3>
+        <div class="form-grid">
+          <div class="form-group"><label>Peso registrado neste atendimento (kg)</label>
+            <input type="number" step="0.01" id="at_peso" value="${atendimento?.peso_registrado_kg ?? ''}">
+            <span class="hint">Atualiza automaticamente o peso atual do paciente.</span>
+          </div>
+          <div class="form-group"><label>Valor cobrado (R$)</label>
+            <input type="number" step="0.01" id="at_valor" value="${atendimento?.valor_cobrado ?? ''}">
+          </div>
+        </div>
+      </div>
+
+      <div class="form-actions" style="margin-bottom:40px;">
+        <button type="submit" class="btn btn-primary">💾 Salvar atendimento</button>
+        <a href="#/historico" class="btn btn-outline">Cancelar</a>
+        ${id ? `<button type="button" class="btn btn-danger" id="atendimentoDeleteBtn">Excluir atendimento</button>` : ''}
+      </div>
+    </form>
+  `;
+
+  const clienteSelect = document.getElementById('at_cliente_id');
+  const pacienteSelect = document.getElementById('at_paciente_id');
+
+  clienteSelect.addEventListener('change', () => {
+    const filtrados = state.pacientes.filter(p => p.cliente_id === clienteSelect.value);
+    pacienteSelect.innerHTML = `<option value="">${filtrados.length ? 'Selecione o paciente...' : 'Este cliente não tem pacientes cadastrados'}</option>` +
+      filtrados.map(p => `<option value="${p.id}">${esc(p.nome)}</option>`).join('');
+  });
+
+  document.getElementById('atendimentoForm').addEventListener('submit', (e) => submitAtendimento(e, id));
+
+  if(id){
+    document.getElementById('atendimentoDeleteBtn').addEventListener('click', () => deleteAtendimento(id));
+  }
+}
+
+async function submitAtendimento(e, id){
+  e.preventDefault();
+  const payload = {
+    cliente_id: document.getElementById('at_cliente_id').value,
+    paciente_id: document.getElementById('at_paciente_id').value,
+    procedimento_id: document.getElementById('at_procedimento_id').value,
+    status: document.getElementById('at_status').value,
+    data_hora_agendada: document.getElementById('at_data_agendada').value || null,
+    data_hora_inicio: document.getElementById('at_data_inicio').value || null,
+    data_hora_fim: document.getElementById('at_data_fim').value || null,
+    queixa_principal: document.getElementById('at_queixa').value.trim() || null,
+    exame_clinico: document.getElementById('at_exame').value.trim() || null,
+    diagnostico: document.getElementById('at_diagnostico').value.trim() || null,
+    conduta: document.getElementById('at_conduta').value.trim() || null,
+    observacoes_livres: document.getElementById('at_obs_livres').value.trim() || null,
+    peso_registrado_kg: document.getElementById('at_peso').value || null,
+    valor_cobrado: document.getElementById('at_valor').value || null,
+  };
+  if(!payload.cliente_id || !payload.paciente_id || !payload.procedimento_id){
+    return toast('Cliente, paciente e procedimento são obrigatórios.', true);
+  }
+  let error;
+  if(id){
+    ({error} = await sb.from('fato_atendimento').update(payload).eq('id', id));
+  } else {
+    ({error} = await sb.from('fato_atendimento').insert([payload]));
+  }
+  if(error) return toast('Erro ao salvar atendimento: ' + error.message, true);
+  toast('Atendimento salvo com sucesso!');
+  await loadAll();
+  location.hash = '#/historico';
+}
+
+async function deleteAtendimento(id){
+  if(!confirm('Excluir este atendimento? Essa ação não pode ser desfeita.')) return;
+  const {error} = await sb.from('fato_atendimento').delete().eq('id', id);
+  if(error) return toast('Erro ao excluir: ' + error.message, true);
+  toast('Atendimento excluído.');
+  await loadAll();
+  location.hash = '#/historico';
+}
+
+/* =========================================================
+   VIEW: HISTÓRICO
+========================================================= */
+function renderHistorico(){
+  app.innerHTML = `
+    <h1 class="page-title serif">Histórico de atendimentos</h1>
+    <p class="page-subtitle">Consulte, filtre e edite atendimentos passados e agendados.</p>
+
+    <div class="card">
+      <div class="filters-row">
+        <input type="text" id="histSearch" placeholder="Buscar por paciente ou cliente...">
+        <select id="histStatus">
+          <option value="">Todos os status</option>
+          <option value="agendado">Agendado</option>
+          <option value="em_andamento">Em andamento</option>
+          <option value="concluido">Concluído</option>
+          <option value="cancelado">Cancelado</option>
+        </select>
+        <a href="#/atendimento/novo" class="btn btn-gold btn-sm">+ Novo Atendimento</a>
+      </div>
+      <div class="table-wrap" id="histTableWrap"></div>
+    </div>
+  `;
+
+  function applyFilters(){
+    const q = document.getElementById('histSearch').value.toLowerCase();
+    const status = document.getElementById('histStatus').value;
+    let list = state.atendimentos;
+    if(q) list = list.filter(a => (a.paciente_nome||'').toLowerCase().includes(q) || (a.cliente_nome||'').toLowerCase().includes(q));
+    if(status) list = list.filter(a => a.status === status);
+    renderHistTable(list);
+  }
+  document.getElementById('histSearch').addEventListener('input', applyFilters);
+  document.getElementById('histStatus').addEventListener('change', applyFilters);
+  applyFilters();
+}
+
+function renderHistTable(list){
+  const wrap = document.getElementById('histTableWrap');
+  if(list.length === 0){ wrap.innerHTML = `<div class="empty-state"><div class="em-icon">🕘</div>Nenhum atendimento encontrado.</div>`; return; }
+  wrap.innerHTML = `
+    <table>
+      <thead><tr><th>Data agendada</th><th>Paciente</th><th>Cliente</th><th>Procedimento</th><th>Status</th><th>Valor</th></tr></thead>
+      <tbody>
+        ${list.map(a => `
+          <tr class="clickable" onclick="location.hash='#/atendimento/${a.id}'">
+            <td>${fmtDate(a.data_hora_agendada)}</td>
+            <td>${esc(a.paciente_nome)}</td>
+            <td>${esc(a.cliente_nome)}</td>
+            <td>${esc(a.procedimento_nome)}</td>
+            <td><span class="badge badge-${a.status}">${statusLabel(a.status)}</span></td>
+            <td>${fmtMoney(a.valor_cobrado)}</td>
+          </tr>
+        `).join('')}
+      </tbody>
+    </table>
+  `;
+}
+
+/* =========================================================
+   BOOT
+========================================================= */
+(async function boot(){
+  app.innerHTML = `<div class="empty-state">Carregando Salus...</div>`;
+  await loadAll();
+  router();
+})();
+</script>
+</body>
+</html>
